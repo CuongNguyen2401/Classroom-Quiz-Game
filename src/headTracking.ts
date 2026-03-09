@@ -12,7 +12,7 @@ export class HeadTracker {
   // State for noise filter
   private currentDirection: TiltDirection = "center";
   private directionStartTime: number = 0;
-  private readonly STABLE_THRESHOLD_MS = 1500; // 1.5 seconds
+  private readonly STABLE_THRESHOLD_MS = 1000; // 1 second
 
   public onTiltProgress: (direction: TiltDirection, progressPct: number) => void = () => {};
   public onTiltConfirmed: (direction: "left" | "right") => void = () => {};
