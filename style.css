@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .clip-circle {
+    clip-path: circle(50% at 50% 50%);
+  }
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+video {
+  /* mirror video */
+  transform: scaleX(-1);
+}
+
+.canvas-overlay {
+  transform: scaleX(-1);
+}
+
+.transition-all-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom progress ring styling */
+.progress-ring-circle {
+  transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
