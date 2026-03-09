@@ -1,7 +1,8 @@
 import { FaceLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
 import { camera } from "./camera";
+import { quizEngine } from "./quizEngine";
 
-export type TiltDirection = "left" | "right" | "center";
+export type TiltDirection = number | "center";
 
 export class HeadTracker {
   private faceLandmarker: FaceLandmarker | null = null;
@@ -15,21 +16,23 @@ export class HeadTracker {
   private readonly STABLE_THRESHOLD_MS = 1000; // 1 second
 
   public onTiltProgress: (direction: TiltDirection, progressPct: number) => void = () => {};
-  public onTiltConfirmed: (direction: "left" | "right") => void = () => {};
+  public onTiltConfirmed: (direction: number) => void = () => {};
 
   async initialize() {
     const filesetResolver = await FilesetResolver.forVisionTasks(
       "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
     );
-    this.faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
-      baseOptions: {
-        modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
-        delegate: "GPU"
-      },
-      outputFaceBlendshapes: false,
-      runningMode: this.runningMode,
-      numFaces: 1
-    });
+    if (!this.faceLandmarker) {
+      this.faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+          delegate: "GPU"
+        },
+        outputFaceBlendshapes: false,
+        runningMode: this.runningMode,
+        numFaces: 1
+      });
+    }
   }
 
   startDetection() {
@@ -50,7 +53,7 @@ export class HeadTracker {
   }
 
   private detect() {
-    if (!this.isDetecting || !this.faceLandmarker || !camera.videoElement) {
+    if (!this.isDetecting || !camera.videoElement) {
       return;
     }
 
@@ -58,10 +61,11 @@ export class HeadTracker {
     
     if (camera.videoElement.currentTime !== this.lastVideoTime) {
       this.lastVideoTime = camera.videoElement.currentTime;
-      const results = this.faceLandmarker.detectForVideo(camera.videoElement, startTimeMs);
       
-      this.drawLandmarks();
-      this.processLandmarks(results);
+      if (this.faceLandmarker) {
+        const results = this.faceLandmarker.detectForVideo(camera.videoElement, startTimeMs);
+        this.processFaceLandmarks(results);
+      }
     }
 
     if (this.isDetecting) {
@@ -69,20 +73,9 @@ export class HeadTracker {
     }
   }
 
-  private drawLandmarks() {
-    const ctx = camera.canvasCtx;
-    ctx.save();
-    ctx.clearRect(0, 0, camera.canvasElement.width, camera.canvasElement.height);
-    
-    // Canvas is css-mirrored, but MediaPipe coordinates are normalized 0-1
-    // We no longer draw the face mesh based on user preference
-    // to only show the video.
-
-    ctx.restore();
-  }
-
-  private processLandmarks(results: any) {
-    if (!results.faceLandmarks || results.faceLandmarks.length === 0) {
+  private processFaceLandmarks(results: any) {
+    const q = quizEngine.getCurrentQuestion();
+    if (!q || q.options.length < 2 || !results.faceLandmarks || results.faceLandmarks.length === 0) {
       this.updateDirection("center");
       return;
     }
@@ -103,26 +96,41 @@ export class HeadTracker {
     const dx = imageRightEye.x - imageLeftEye.x; // always positive
     const dy = imageRightEye.y - imageLeftEye.y; 
     
-    // If user tilts physical right: imageLeftEye.y increases, imageRightEye.y decreases => dy < 0
-    // If user tilts physical left: imageLeftEye.y decreases, imageRightEye.y increases => dy > 0
     const rollAngle = Math.atan2(dy, dx) * (180 / Math.PI);
     
+    // 2. Pitch Calculation (Up / Down)
+    const topHead = marks[10];
+    const chin = marks[152];
+    const nose = marks[1];
+    
+    const faceH = chin.y - topHead.y;
+    const noseRatio = (nose.y - topHead.y) / faceH;
+    
     // Sensitivity Thresholds
-    const ROLL_THRESHOLD = 12;  // degrees (increased for lower sensitivity)
+    const ROLL_THRESHOLD = 12;  // degrees
+    // Normal noseRatio is ~0.49. Lower = Up. Higher = Down.
+    const LOOK_UP_THRESHOLD = 0.43;
+    const LOOK_DOWN_THRESHOLD = 0.58;
     
-    // Physical Left Movement (rolling)
     const isPhysicalLeft = rollAngle > ROLL_THRESHOLD;
-    
-    // Physical Right Movement (rolling)
     const isPhysicalRight = rollAngle < -ROLL_THRESHOLD;
+    const isLookingUp = noseRatio < LOOK_UP_THRESHOLD;
+    const isLookingDown = noseRatio > LOOK_DOWN_THRESHOLD;
     
     let tiltIndicated: TiltDirection = "center";
     
-    // Direct mapping: physical movement perfectly matches UI elements.
-    if (isPhysicalLeft && !isPhysicalRight) {
-      tiltIndicated = "left"; 
-    } else if (isPhysicalRight && !isPhysicalLeft) {
-      tiltIndicated = "right"; 
+    if (q.options.length === 2) {
+      if (isPhysicalLeft) tiltIndicated = 0; 
+      else if (isPhysicalRight) tiltIndicated = 1; 
+    } else if (q.options.length === 3) {
+      if (isPhysicalLeft) tiltIndicated = 0; 
+      else if (isLookingUp) tiltIndicated = 1; 
+      else if (isPhysicalRight) tiltIndicated = 2; 
+    } else if (q.options.length === 4) {
+      if (isPhysicalLeft) tiltIndicated = 0; 
+      else if (isLookingUp) tiltIndicated = 1; 
+      else if (isPhysicalRight) tiltIndicated = 2; 
+      else if (isLookingDown) tiltIndicated = 3; 
     }
     
     this.updateDirection(tiltIndicated);
@@ -146,7 +154,7 @@ export class HeadTracker {
         if (progress >= 1.0 && this.isDetecting) {
           this.isDetecting = false;
           // Trigger confirmed choice
-          this.onTiltConfirmed(detected as "left" | "right");
+          this.onTiltConfirmed(detected as number);
         }
       } else {
         this.onTiltProgress("center", 0);

@@ -1,0 +1,9 @@
+Admin: 
+- Setup 2 3 4 answer
+- Set up time to response for answer
+- Set up use Face or Hand Sign
+- Save Questions
+- Make default Option: 
+    - Using Face: 5 questions, 2 answer
+    - Using Hand: 5 questions, 4 answer
+Players: Make answer bigger

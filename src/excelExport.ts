@@ -11,8 +11,8 @@ export function exportResultsToExcel() {
     return {
       "Question Number": r.questionIndex + 1,
       "Question Text": q.question,
-      "Selected Answer": r.selected.toUpperCase(),
-      "Correct Answer": q.correct.toUpperCase(),
+      "Selected Answer": r.selectedIndex >= 0 ? q.options[r.selectedIndex].toUpperCase() : "TIMEOUT",
+      "Correct Answer": q.options[q.correctIndex].toUpperCase(),
       "Result": r.correct ? "CORRECT" : "WRONG",
     };
   });
