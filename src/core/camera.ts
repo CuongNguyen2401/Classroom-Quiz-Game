@@ -1,18 +1,23 @@
 import Swal from 'sweetalert2';
 
 export class CameraControl {
-  videoElement: HTMLVideoElement;
-  canvasElement: HTMLCanvasElement;
-  canvasCtx: CanvasRenderingContext2D;
+  videoElement!: HTMLVideoElement;
+  canvasElement!: HTMLCanvasElement;
+  canvasCtx!: CanvasRenderingContext2D;
   stream: MediaStream | null = null;
+  videoElementId: string;
+  canvasElementId: string;
 
   constructor(videoElementId: string, canvasElementId: string) {
-    this.videoElement = document.getElementById(videoElementId) as HTMLVideoElement;
-    this.canvasElement = document.getElementById(canvasElementId) as HTMLCanvasElement;
-    this.canvasCtx = this.canvasElement.getContext("2d")!;
+    this.videoElementId = videoElementId;
+    this.canvasElementId = canvasElementId;
   }
 
   async startCamera(): Promise<void> {
+    this.videoElement = document.getElementById(this.videoElementId) as HTMLVideoElement;
+    this.canvasElement = document.getElementById(this.canvasElementId) as HTMLCanvasElement;
+    this.canvasCtx = this.canvasElement.getContext("2d")!;
+
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         video: { width: 640, height: 480 },

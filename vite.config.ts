@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
-  plugins: [],
-  base: './', // Makes it easier to open index.html directly from dist pattern
+  plugins: [react()],
+  base: './',
 })
