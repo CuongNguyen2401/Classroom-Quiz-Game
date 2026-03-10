@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.4",
@@ -17,7 +18,9 @@
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^0.10.14",
+    "canvas-confetti": "^1.9.4",
     "lucide": "^0.378.0",
+    "sweetalert2": "^11.26.22",
     "xlsx": "^0.18.5"
   }
 }

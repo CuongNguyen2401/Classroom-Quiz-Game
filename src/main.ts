@@ -5,6 +5,7 @@ import { quizEngine } from "./quizEngine";
 import { resultManager } from "./resultManager";
 import { ui } from "./ui";
 import { exportResultsToExcel } from "./excelExport";
+import Swal from 'sweetalert2';
 
 async function init() {
   ui.showScreen("setup");
@@ -63,17 +64,28 @@ async function init() {
     ui.generateSetupFields(5, 4);
   });
 
-  ui.btnSaveLibrary.addEventListener("click", () => {
+  ui.btnSaveLibrary.addEventListener("click", async () => {
     const qData = ui.getSetupData();
     if (!qData) return;
 
     let lib = ui.getLibraryFromStorage();
     if (lib.length >= 5) {
-      alert("You have reached the maximum of 5 saved question sets. Please remove one first.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Library Full',
+        text: 'You have reached the maximum of 5 saved question sets. Please remove one first.',
+        confirmButtonColor: '#3b82f6'
+      });
       return;
     }
 
-    const name = prompt("Enter a name for this question set:");
+    const { value: name } = await Swal.fire({
+      title: 'Save Quizzes',
+      text: 'Enter a name for this question set:',
+      input: 'text',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981'
+    });
     if (!name || name.trim() === "") return;
 
     const mode = ui.trackingModeInput.value;
@@ -93,7 +105,7 @@ async function init() {
     refreshLibrary();
   });
 
-  ui.btnClearAll.addEventListener("click", () => {
+  ui.btnClearAll.addEventListener("click", async () => {
     let hasData = false;
     const inputs = ui.questionsContainer.querySelectorAll("input[type='text']") as NodeListOf<HTMLInputElement>;
     
@@ -105,7 +117,16 @@ async function init() {
     }
 
     if (hasData) {
-      if (!confirm("This action will clear all your question before")) {
+      const result = await Swal.fire({
+        title: 'Are you sure?',
+        text: "This action will clear all your questions.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Yes, clear all!'
+      });
+      if (!result.isConfirmed) {
         return; // User cancelled
       }
     }
@@ -173,8 +194,17 @@ async function init() {
     startNextQuestion();
   });
 
-  ui.btnExitGame.addEventListener("click", () => {
-    if (confirm("Are you sure you want to exit the quiz? Your current progress will be lost.")) {
+  ui.btnExitGame.addEventListener("click", async () => {
+    const result = await Swal.fire({
+      title: 'Exit Quiz?',
+      text: "Are you sure you want to exit the quiz? Your current progress will be lost.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, exit!'
+    });
+    if (result.isConfirmed) {
       if (questionTimerInterval) clearInterval(questionTimerInterval);
       camera.stopCamera();
       if (activeTracker) activeTracker.stopDetection();

@@ -1,4 +1,6 @@
 import { Question, Result } from "./quizEngine";
+import confetti from "canvas-confetti";
+import Swal from 'sweetalert2';
 
 export interface LibraryItem {
   id: string;
@@ -112,7 +114,12 @@ export class UI {
       const qCorrect = parseInt((block.querySelector(".q-correct") as HTMLSelectElement).value, 10);
 
       if (!qText || options.some(opt => !opt)) {
-        alert("Please fill all fields before starting.");
+        Swal.fire({
+          icon: 'error',
+          title: 'Missing Fields',
+          text: 'Please fill all fields before starting.',
+          confirmButtonColor: '#4f46e5'
+        });
         return null;
       }
       questions.push({ question: qText, options: options, correctIndex: qCorrect });
@@ -222,10 +229,39 @@ export class UI {
     this.feedbackIcon.innerHTML = isCorrect ? "✅" : "❌";
     this.progressRing.style.stroke = isCorrect ? "#4ade80" : "#f87171"; // green / red
     
+    if (isCorrect) {
+      this.playConfetti();
+    } else {
+      this.playShake();
+    }
+    
     setTimeout(() => {
       this.feedbackOverlay.style.opacity = "0";
       this.progressRing.style.stroke = "#6366f1"; // indigo
     }, 1500);
+  }
+
+  private playConfetti() {
+    confetti({
+      particleCount: 150,
+      spread: 90,
+      origin: { y: 0.6 },
+      colors: ['#4ade80', '#60a5fa', '#fbbf24', '#f87171']
+    });
+  }
+
+  private playShake() {
+    this.feedbackIcon.animate([
+      { transform: 'translateX(0px)' },
+      { transform: 'translateX(-15px) rotate(-5deg)' },
+      { transform: 'translateX(15px) rotate(5deg)' },
+      { transform: 'translateX(-15px) rotate(-5deg)' },
+      { transform: 'translateX(15px) rotate(5deg)' },
+      { transform: 'translateX(0px)' }
+    ], {
+      duration: 400,
+      easing: 'ease-in-out'
+    });
   }
 
   showResults(results: Result[], questions: Question[], totalScore: number) {
@@ -318,14 +354,29 @@ export class UI {
         </div>
       `;
       el.querySelector(".btn-load")?.addEventListener("click", () => onLoad(item));
-      el.querySelector(".btn-rename")?.addEventListener("click", () => {
-        const newName = prompt("Enter new name:", item.name);
+      el.querySelector(".btn-rename")?.addEventListener("click", async () => {
+        const { value: newName } = await Swal.fire({
+          title: 'Enter new name',
+          input: 'text',
+          inputValue: item.name,
+          showCancelButton: true,
+          confirmButtonColor: '#3b82f6'
+        });
         if (newName && newName.trim()) {
           onRename(item.id, newName.trim());
         }
       });
-      el.querySelector(".btn-delete")?.addEventListener("click", () => {
-        if (confirm(`Are you sure you want to remove "${item.name}" from your library?`)) {
+      el.querySelector(".btn-delete")?.addEventListener("click", async () => {
+        const result = await Swal.fire({
+          title: 'Are you sure?',
+          text: `Remove "${item.name}" from your library?`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#6b7280',
+          confirmButtonText: 'Yes, remove it!'
+        });
+        if (result.isConfirmed) {
           onDelete(item.id);
         }
       });

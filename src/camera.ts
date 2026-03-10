@@ -1,3 +1,5 @@
+import Swal from 'sweetalert2';
+
 export class CameraControl {
   videoElement: HTMLVideoElement;
   canvasElement: HTMLCanvasElement;
@@ -30,7 +32,12 @@ export class CameraControl {
       });
     } catch (err) {
       console.error("Error accessing webcam:", err);
-      alert("Please allow webcam access to use the game.");
+      Swal.fire({
+        icon: 'error',
+        title: 'Camera Error',
+        text: 'Please allow webcam access to use the game.',
+        confirmButtonColor: '#4f46e5'
+      });
     }
   }
 
