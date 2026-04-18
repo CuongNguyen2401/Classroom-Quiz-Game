@@ -30,6 +30,7 @@ interface QuizState {
   getScore: () => number;
   answerCurrent: (selectedIndex: number) => boolean;
   nextQuestion: () => boolean;
+  resetForRetry: () => void;
 }
 
 export const useQuizStore = create<QuizState>((set, get) => ({
@@ -71,7 +72,8 @@ export const useQuizStore = create<QuizState>((set, get) => ({
     const nextIndex = state.currentQuestionIndex + 1;
     set({ currentQuestionIndex: nextIndex });
     return nextIndex < state.questions.length;
-  }
+  },
+  resetForRetry: () => set({ currentQuestionIndex: 0, score: 0 }),
 }));
 
 // Backward compatibility proxy for existing code
@@ -87,5 +89,6 @@ export const quizEngine = {
   getTotalQuestions: () => useQuizStore.getState().getTotalQuestions(),
   getScore: () => useQuizStore.getState().getScore(),
   answerCurrent: (idx: number) => useQuizStore.getState().answerCurrent(idx),
-  nextQuestion: () => useQuizStore.getState().nextQuestion()
+  nextQuestion: () => useQuizStore.getState().nextQuestion(),
+  resetForRetry: () => useQuizStore.getState().resetForRetry(),
 };

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { SetupScreen } from './components/SetupScreen';
 import { PlayScreen } from './components/PlayScreen';
 import { ResultScreen } from './components/ResultScreen';
+import { quizEngine } from './core/quizEngine';
+import { resultManager } from './core/resultManager';
 
 export type ScreenType = 'setup' | 'play' | 'result';
 
@@ -18,9 +20,13 @@ export function App() {
         />
       )}
       {screen === 'result' && (
-        <ResultScreen 
-          onRestart={() => setScreen('setup')} 
-          onRetry={() => setScreen('play')} 
+        <ResultScreen
+          onRestart={() => setScreen('setup')}
+          onRetry={() => {
+            quizEngine.resetForRetry();
+            resultManager.clearResults();
+            setScreen('play');
+          }}
         />
       )}
     </div>

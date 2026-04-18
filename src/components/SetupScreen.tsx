@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar';
 import { QuestionFormList } from './QuestionFormList';
 import { Question, quizEngine } from '../core/quizEngine';
 import Swal from 'sweetalert2';
+import { MusicSelector } from './setup/MusicSelector';
 
 export function SetupScreen({ onStart }: { onStart: () => void }) {
   const [cfg, setCfg] = useState<{count: number, optCount: number, mode: 'face'|'hand', timeLimit: number}>({count: 5, optCount: 2, mode: 'face', timeLimit: 10});
@@ -90,6 +91,7 @@ export function SetupScreen({ onStart }: { onStart: () => void }) {
           <button onClick={clearAll} className="flex-1 bg-red-50 text-red-600 font-bold py-3 px-4 rounded-lg">Clear All</button>
         </div>
         <QuestionFormList questions={questions} onChange={handleQChange} />
+        <MusicSelector />
         <button onClick={startGame} className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg mt-8 text-xl">START GAME</button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { resultManager } from '../core/resultManager';
 import { camera } from '../core/camera';
 import { headTracker } from '../core/headTracking';
 import { handTracker } from '../core/handTracking';
+import { audioManager } from '../core/audioManager';
 import confetti from 'canvas-confetti';
 import Swal from 'sweetalert2';
 
@@ -36,7 +37,9 @@ export function PlayScreen({ onFinish, onExit }: Props) {
       startTracking();
     };
     init();
-    return () => { cleanUp(); };
+    audioManager.stopPreview();
+    audioManager.startBg();
+    return () => { cleanUp(); audioManager.stopBg(); };
   }, []);
 
   const cleanUp = () => {
@@ -83,7 +86,12 @@ export function PlayScreen({ onFinish, onExit }: Props) {
 
   const showFeedback = (corr: boolean) => {
     setFeedback({ show: true, correct: corr });
-    if (corr) confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#4ade80', '#60a5fa', '#fbbf24', '#f87171'] });
+    if (corr) {
+      confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 }, colors: ['#4ade80', '#60a5fa', '#fbbf24', '#f87171'] });
+      audioManager.playSfxCorrect();
+    } else {
+      audioManager.playSfxWrong();
+    }
     setTimeout(() => setFeedback({ show: false, correct: false }), 1500);
   };
 
